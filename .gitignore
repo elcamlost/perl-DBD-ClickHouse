@@ -19,3 +19,6 @@ nytprof.out
 *.bs
 /_eumm/
 .perl-version
+cpanfile
+local
+cpanfile.snapshot
