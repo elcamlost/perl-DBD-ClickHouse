@@ -22,3 +22,6 @@ nytprof.out
 cpanfile
 local
 cpanfile.snapshot
+xt/
+t/
+MANIFEST.SKIP
