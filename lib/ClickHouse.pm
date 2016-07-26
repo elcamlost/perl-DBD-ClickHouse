@@ -136,9 +136,10 @@ sub select_value {
 }
 
 sub do {
-    my ($self, $query, @values) = @_;
+    my ($self, $query, @rows) = @_;
+    @rows = $self->_prepare_query(@rows);
     my $query_url = $self->_construct_query_uri($query);
-    my $post_data = scalar @values ? join (",", map { "(" . join (",", @{ $_ }) . ")" } @values) : "\n" ;
+    my $post_data = scalar @rows ? join (",", map { "(" . join (",", @{ $_ }) . ")" } @rows) : "\n" ;
 
     $self->_get_socket()->write_request('POST' => $query_url, $post_data);
     return $self->_parse_response();
@@ -207,6 +208,22 @@ sub _construct_query_uri {
     return $query_uri->as_string();
 }
 
+sub _prepare_query {
+    my ($class, @rows) = @_;
+    foreach my $row (@rows) {
+        foreach my $value (@$row) {
+            if (ref $value eq 'ARRAY') {
+                $value = q{'} . join ("','", @$value) . q{'};
+            }
+            unless (looks_like_number ($value)) {
+                $value =~  s{\\}{\\\\}g;
+                $value =~  s/'/\\'/g;
+                $value = qq{'$value'};
+            }
+        }
+    }
+    return @rows;
+}
 
 1;
 
