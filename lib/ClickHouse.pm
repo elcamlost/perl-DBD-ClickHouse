@@ -10,6 +10,7 @@ use URI::Escape;
 use URI::QueryParam;
 use Carp;
 use Scalar::Util qw/looks_like_number/;
+use Try::Tiny;
 
 our $AUTOLOAD;
 
@@ -68,12 +69,25 @@ sub new {
                 $self->{"_$key"} = $_attrs{"_$key"};
             }
         }
+        $self->{'_builder'} = \&_builder;
+
+        $self->_connect();
+
+        return 1;
+    }
+
+    sub _builder {
+        my ($self) = @_;
+        delete $self->{'_socket'};
+        delete $self->{'_uri'};
+
         # create Net::HTTP object
         my $socket = Net::HTTP->new(
             'Host'        => $self->{'_host'},
             'PeerPort'    => $self->{'_port'},
             'HTTPVersion' => '1.1',
-            'KeepAlive'   => $self->{'_keep_alive'},
+            'KeepAlive'   =>  $self->{'_keep_alive'},
+
         ) or die "Can't connect: $@";
 
         # create URI object
@@ -85,6 +99,24 @@ sub new {
         $self->{'_uri'} = $uri;
 
         return 1;
+
+    }
+
+    sub _connect {
+        my ($self) = @_;
+        $self->_builder($self);
+        return 1;
+    }
+
+    sub _query {
+        my ($self, $cb) = @_;
+        return &try (
+            $cb,
+            catch {
+                    $self->_connect();
+                    $cb->();
+                }
+        );
     }
 }
 
@@ -120,11 +152,12 @@ sub disconnect {
 
 sub select {
     my ($self, $query) = @_;
+    return $self->_query(sub {
+            my $query_url = $self->_construct_query_uri( $query );
 
-    my $query_url = $self->_construct_query_uri($query);
-
-    $self->_get_socket()->write_request('GET' => $query_url);
-    return $self->_parse_response();
+            $self->_get_socket()->write_request( 'GET' => $query_url );
+            return $self->_parse_response();
+        });
 
 }
 
@@ -137,12 +170,14 @@ sub select_value {
 
 sub do {
     my ($self, $query, @rows) = @_;
-    @rows = $self->_prepare_query(@rows);
-    my $query_url = $self->_construct_query_uri($query);
-    my $post_data = scalar @rows ? join (",", map { "(" . join (",", @{ $_ }) . ")" } @rows) : "\n" ;
+    return $self->_query(sub {
+            my @prepared_rows = $self->_prepare_query(@rows);
+            my $query_url = $self->_construct_query_uri($query);
+            my $post_data = scalar @prepared_rows ? join (",", map { "(" . join (",", @{ $_ }) . ")" } @prepared_rows) : "\n" ;
 
-    $self->_get_socket()->write_request('POST' => $query_url, $post_data);
-    return $self->_parse_response();
+            $self->_get_socket()->write_request('POST' => $query_url, $post_data);
+            return $self->_parse_response();
+        });
 
 }
 
@@ -210,19 +245,43 @@ sub _construct_query_uri {
 
 sub _prepare_query {
     my ($class, @rows) = @_;
-    foreach my $row (@rows) {
+    my @clone_rows = map { [@$_] } @rows;
+    foreach my $row (@clone_rows) {
         foreach my $value (@$row) {
+            my $type = 'NUMBER';
+            if (ref $value eq 'HASH') {
+                $type = $value->{'TYPE'};
+                $value = $value->{'VALUE'};
+            }
+            unless (defined ($value)) {
+                $type = 'NULL';
+            }
             if (ref $value eq 'ARRAY') {
-                $value = q{'} . join ("','", @$value) . q{'};
+                $type = 'ARRAY';
             }
-            unless (looks_like_number ($value)) {
-                $value =~  s{\\}{\\\\}g;
-                $value =~  s/'/\\'/g;
-                $value = qq{'$value'};
+            if ( defined ($value) && !looks_like_number ($value)) {
+                $type = 'STRING';
             }
+            $value = _escape_value($value, $type);
         }
     }
-    return @rows;
+    return @clone_rows;
+}
+
+sub _escape_value {
+    my ($value, $type) = @_;
+    if ($type eq 'NULL') {
+        $value = qq{''};
+    }
+    elsif ($type eq 'STRING') {
+        $value =~  s{\\}{\\\\}g;
+        $value =~  s/'/\\'/g;
+        $value = qq{'$value'};
+    }
+    elsif ($type eq 'ARRAY') {
+        $value = q{'} . join ("','", @$value) . q{'};
+    }
+    return $value;
 }
 
 1;
