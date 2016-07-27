@@ -8,7 +8,12 @@ my $builder = Module::Build->new(
     license             => 'artistic_1',
     dist_author         => q{Ilya Rassadin <elcamlost@gmail.com>},
     dist_version_from   => 'lib/ClickHouse.pm',
-    release_status      => 'stable',
+    release_status      => 'unstable',
+    meta_merge => {
+        resources => {
+            repository => 'https://github.com/elcamlost/perl-DBD-ClickHouse'
+        }
+    },
     configure_requires => {
         'Module::Build' => 0,
     },

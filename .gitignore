@@ -11,8 +11,7 @@ Build.bat
 /Makefile.old
 /MANIFEST.bak
 /META.yml
-/META.json
-/MYMETA.*
+/MYMETA.yml
 nytprof.out
 /pm_to_blib
 *.o

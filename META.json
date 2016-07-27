@@ -1,0 +1,48 @@
+{
+   "abstract" : "Database driver for Clickhouse OLAP Database",
+   "author" : [
+      "Ilya Rassadin <elcamlost@gmail.com>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Module::Build version 0.4214",
+   "license" : [
+      "artistic_1"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "ClickHouse",
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "Test::More" : "0"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "Module::Build" : "0"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "Net::HTTP" : "6.09",
+            "Try::Tiny" : "0.24",
+            "URI" : "1.71"
+         }
+      }
+   },
+   "provides" : {
+      "ClickHouse" : {
+         "file" : "lib/ClickHouse.pm",
+         "version" : "0.01"
+      }
+   },
+   "release_status" : "unstable",
+   "resources" : {
+      "repository" : {
+         "url" : "https://github.com/elcamlost/perl-DBD-ClickHouse"
+      }
+   },
+   "version" : "0.01"
+}
