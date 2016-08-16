@@ -250,24 +250,29 @@ sub _prepare_query {
     my @clone_rows = map { [@$_] } @rows;
     foreach my $row (@clone_rows) {
         foreach my $value (@$row) {
-            my $type = 'NUMBER';
-            if (ref $value eq 'HASH') {
-                $type = $value->{'TYPE'};
-                $value = $value->{'VALUE'};
-            }
-            unless (defined ($value)) {
-                $type = 'NULL';
-            }
-            if (ref $value eq 'ARRAY') {
-                $type = 'ARRAY';
-            }
-            if ( defined ($value) && !looks_like_number ($value)) {
-                $type = 'STRING';
-            }
-            $value = _escape_value($value, $type);
+            $value = _type_resolve($value);
         }
     }
     return @clone_rows;
+}
+
+sub _type_resolve {
+    my $value = shift;
+    my $type = 'NUMBER';
+    if (ref $value eq 'HASH') {
+        $type = $value->{'TYPE'};
+        $value = $value->{'VALUE'};
+    }
+    unless (defined ($value)) {
+        $type = 'NULL';
+    }
+    if (ref $value eq 'ARRAY') {
+        $type = 'ARRAY';
+    }
+    elsif ( defined ($value) && !looks_like_number ($value)) {
+        $type = 'STRING';
+    }
+    return $value = _escape_value($value, $type);
 }
 
 sub _escape_value {
@@ -281,11 +286,10 @@ sub _escape_value {
         $value = qq{'$value'};
     }
     elsif ($type eq 'ARRAY') {
-        $value = q{'} . join ("','", @$value) . q{'};
+        $value = q{[} . join (",",  map { _type_resolve($_) } @$value ) . q{]};
     }
     return $value;
 }
-
 1;
 
 __END__
