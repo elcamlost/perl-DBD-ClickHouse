@@ -26,9 +26,9 @@
       },
       "runtime" : {
          "requires" : {
-            "Net::HTTP" : "6.09",
-            "Try::Tiny" : "0.24",
-            "URI" : "1.71"
+            "Net::HTTP" : 6.09,
+            "Try::Tiny" : 0.24,
+            "URI" : 1.71
          }
       }
    },

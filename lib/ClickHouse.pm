@@ -4,7 +4,7 @@ use 5.010;
 use strict;
 use warnings FATAL => 'all';
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use Net::HTTP;
 use URI;
@@ -28,8 +28,8 @@ sub new {
         '_host'       => 'localhost',
         '_port'       => 8123,
         '_database'   => 'default',
-        '_user'       => ':',
-        '_password'   => 48,
+        '_user'       => '',
+        '_password'   => '',
         '_keep_alive' => 1,
         '_format'     => 'TabSeparated',
         '_socket'     => undef,
@@ -94,7 +94,7 @@ sub new {
 
         # create URI object
         my $uri = URI->new(sprintf ("http://%s:%d/?database=%s", $self->{'_host'}, $self->{'_port'}, $self->{'_database'}));
-        $uri->query_param('user' => $self->{'_user'});
+        $uri->query_param('user' => $self->{'_user'}) if $self->{'_user'};
         $uri->query_param('password' => $self->{'_password'}) if $self->{'_password'};
 
         $self->{'_socket'} = $socket;
@@ -115,9 +115,9 @@ sub new {
         return &try (
             $cb,
             catch {
-                    $self->_connect();
-                    $cb->();
-                }
+                $self->_connect();
+                $cb->();
+            }
         );
     }
 }
@@ -155,11 +155,11 @@ sub disconnect {
 sub select {
     my ($self, $query) = @_;
     return $self->_query(sub {
-            my $query_url = $self->_construct_query_uri( $query );
+        my $query_url = $self->_construct_query_uri( $query );
 
-            $self->_get_socket()->write_request( 'GET' => $query_url );
-            return $self->_parse_response();
-        });
+        $self->_get_socket()->write_request( 'GET' => $query_url );
+        return $self->_parse_response();
+    });
 
 }
 
@@ -173,13 +173,13 @@ sub select_value {
 sub do {
     my ($self, $query, @rows) = @_;
     return $self->_query(sub {
-            my @prepared_rows = $self->_prepare_query(@rows);
-            my $query_url = $self->_construct_query_uri($query);
-            my $post_data = scalar @prepared_rows ? join (",", map { "(" . join (",", @{ $_ }) . ")" } @prepared_rows) : "\n" ;
+        my @prepared_rows = $self->_prepare_query(@rows);
+        my $query_url = $self->_construct_query_uri($query);
+        my $post_data = scalar @prepared_rows ? join (",", map { "(" . join (",", @{ $_ }) . ")" } @prepared_rows) : "\n" ;
 
-            $self->_get_socket()->write_request('POST' => $query_url, $post_data);
-            return $self->_parse_response();
-        });
+        $self->_get_socket()->write_request('POST' => $query_url, $post_data);
+        return $self->_parse_response();
+    });
 
 }
 
@@ -209,7 +209,8 @@ sub _parse_response {
     my ($code, $mess) = $self->_get_socket()->read_response_headers();
     if ($code == 200 ) {
         return _formaty_query_result( $self->_read_body() );
-    } else {
+    }
+    else {
         my $add_mess = _formaty_query_result( $self->_read_body() );
         if (defined $add_mess) { $add_mess = $add_mess->[0]->[0] };
         die "ClickHouse error: $mess ($add_mess)";
@@ -257,7 +258,7 @@ sub _prepare_query {
 }
 
 sub _type_resolve {
-    my $value = shift;
+    my ($value) = @_;
     my $type = 'NUMBER';
     if (ref $value eq 'HASH') {
         $type = $value->{'TYPE'};
@@ -304,7 +305,7 @@ ClickHouse - Database driver for Clickhouse OLAP Database
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 
 
