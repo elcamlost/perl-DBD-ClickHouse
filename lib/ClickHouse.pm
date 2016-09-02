@@ -221,13 +221,16 @@ sub _read_body {
     my ($self) = @_;
 
     my @response;
+    my $content = '';
     while (1) {
         my $buf;
         my $n = $self->_get_socket()->read_entity_body($buf, 1024);
         die "can't read response: $!" unless defined $n;
         last unless $n;
-        push @response, split (/\n/, $buf);
+        $content .= $buf;
     }
+    push @response, split (/\n/, $content);
+
     return \@response;
 }
 
