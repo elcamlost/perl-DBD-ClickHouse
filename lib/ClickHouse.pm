@@ -4,7 +4,7 @@ use 5.010;
 use strict;
 use warnings FATAL => 'all';
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use Net::HTTP;
 use URI;
@@ -155,12 +155,23 @@ sub disconnect {
 sub select {
     my ($self, $query) = @_;
     return $self->_query(sub {
-        my $query_url = $self->_construct_query_uri( $query );
+        my $method;
+        my $query_url;
+        my @post_data = ();
+        if (length ($query) <= 7000) {
+            $query_url = $self->_construct_query_uri( $query );
+            $method = 'GET';
+        }
+        else {
+            $query_url = $self->_get_uri()->clone();
+            $method = 'POST';
+            push @post_data, $query;
+        }
 
-        $self->_get_socket()->write_request( 'GET' => $query_url );
-        return $self->_parse_response();
+
+        $self->_get_socket()->write_request( $method => $query_url, @post_data );
+        return $self->_parse_response($query);
     });
-
 }
 
 sub select_value {
@@ -178,7 +189,7 @@ sub do {
         my $post_data = scalar @prepared_rows ? join (",", map { "(" . join (",", @{ $_ }) . ")" } @prepared_rows) : "\n" ;
 
         $self->_get_socket()->write_request('POST' => $query_url, $post_data);
-        return $self->_parse_response();
+        return $self->_parse_response($query);
     });
 
 }
@@ -205,15 +216,15 @@ sub ping {
 }
 
 sub _parse_response {
-    my ($self) = @_;
+    my ($self, $query) = @_;
     my ($code, $mess) = $self->_get_socket()->read_response_headers();
     if ($code == 200 ) {
         return _formaty_query_result( $self->_read_body() );
     }
     else {
         my $add_mess = _formaty_query_result( $self->_read_body() );
-        if (defined $add_mess) { $add_mess = $add_mess->[0]->[0] };
-        die "ClickHouse error: $mess ($add_mess)";
+        if (defined $add_mess) { $add_mess = $add_mess->[0]->[0] // '' };
+        die "ClickHouse error: $mess ($add_mess)\n\t$query";
     }
 }
 
@@ -221,13 +232,17 @@ sub _read_body {
     my ($self) = @_;
 
     my @response;
+    my $chunk = '';
     while (1) {
         my $buf;
         my $n = $self->_get_socket()->read_entity_body($buf, 1024);
         die "can't read response: $!" unless defined $n;
         last unless $n;
+        $buf = $chunk . $buf;
         push @response, split (/\n/, $buf);
+        $chunk = substr ($buf,-1) eq "\n" ? '' : pop @response;
     }
+    push @response, $chunk if $chunk;
     return \@response;
 }
 
@@ -251,29 +266,24 @@ sub _prepare_query {
     my @clone_rows = map { [@$_] } @rows;
     foreach my $row (@clone_rows) {
         foreach my $value (@$row) {
-            $value = _type_resolve($value);
+            my $type = 'NUMBER';
+            if (ref $value eq 'HASH') {
+                $type = $value->{'TYPE'};
+                $value = $value->{'VALUE'};
+            }
+            unless (defined ($value)) {
+                $type = 'NULL';
+            }
+            if (ref $value eq 'ARRAY') {
+                $type = 'ARRAY';
+            }
+            if ( defined ($value) && !looks_like_number ($value)) {
+                $type = 'STRING';
+            }
+            $value = _escape_value($value, $type);
         }
     }
     return @clone_rows;
-}
-
-sub _type_resolve {
-    my ($value) = @_;
-    my $type = 'NUMBER';
-    if (ref $value eq 'HASH') {
-        $type = $value->{'TYPE'};
-        $value = $value->{'VALUE'};
-    }
-    unless (defined ($value)) {
-        $type = 'NULL';
-    }
-    if (ref $value eq 'ARRAY') {
-        $type = 'ARRAY';
-    }
-    elsif ( defined ($value) && !looks_like_number ($value)) {
-        $type = 'STRING';
-    }
-    return $value = _escape_value($value, $type);
 }
 
 sub _escape_value {
@@ -282,15 +292,17 @@ sub _escape_value {
         $value = qq{''};
     }
     elsif ($type eq 'STRING') {
+        utf8::encode($value) if utf8::is_utf8($value);
         $value =~  s{\\}{\\\\}g;
         $value =~  s/'/\\'/g;
         $value = qq{'$value'};
     }
     elsif ($type eq 'ARRAY') {
-        $value = q{[} . join (",",  map { _type_resolve($_) } @$value ) . q{]};
+        $value = q{'} . join ("','", @$value) . q{'};
     }
     return $value;
 }
+
 1;
 
 __END__
@@ -305,7 +317,7 @@ ClickHouse - Database driver for Clickhouse OLAP Database
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 
 
@@ -411,7 +423,7 @@ This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a
 copy of the full license at:
 
-  The Artistic License 2.0 (GPL Compatible)
+   The Artistic License 2.0 (GPL Compatible)
 
 Aggregation of this Package with a commercial distribution is always
 permitted provided that the use of this Package is embedded; that is,

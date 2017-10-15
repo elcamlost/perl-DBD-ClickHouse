@@ -4,7 +4,7 @@ NAME
 
 VERSION
 
-    Version 0.02
+    Version 0.03
 
 SYNOPSIS
 
@@ -106,7 +106,7 @@ LICENSE AND COPYRIGHT
     under the terms of the the Artistic License (2.0). You may obtain a
     copy of the full license at:
 
-      The Artistic License 2.0 (GPL Compatible)
+       The Artistic License 2.0 (GPL Compatible)
 
     Aggregation of this Package with a commercial distribution is always
     permitted provided that the use of this Package is embedded; that is,
