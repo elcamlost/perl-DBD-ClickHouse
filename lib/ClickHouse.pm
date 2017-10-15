@@ -4,7 +4,7 @@ use 5.010;
 use strict;
 use warnings FATAL => 'all';
 
-our $VERSION = '0.04';
+our $VERSION = '0.03';
 
 use Net::HTTP;
 use URI;
