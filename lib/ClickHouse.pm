@@ -408,10 +408,10 @@ L<http://search.cpan.org/dist/ClickHouse/>
 Copyright 2016 Ilya Rassadin.
 
 This program is free software; you can redistribute it and/or modify it
-under the terms of the the Artistic License (1.0). You may obtain a
+under the terms of the the Artistic License (2.0). You may obtain a
 copy of the full license at:
 
-L<http://www.perlfoundation.org/artistic_license_1_0>
+  The Artistic License 2.0 (GPL Compatible)
 
 Aggregation of this Package with a commercial distribution is always
 permitted provided that the use of this Package is embedded; that is,
