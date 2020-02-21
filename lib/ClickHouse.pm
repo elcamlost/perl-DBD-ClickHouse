@@ -4,7 +4,7 @@ use 5.010;
 use strict;
 use warnings FATAL => 'all';
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use Net::HTTP;
 use URI;
@@ -34,6 +34,7 @@ sub new {
         '_format'     => 'TabSeparated',
         '_socket'     => undef,
         '_uri'        => undef,
+        '_timeout'    => 30,
     );
 
     #
@@ -89,6 +90,7 @@ sub new {
             'PeerPort'    => $self->{'_port'},
             'HTTPVersion' => '1.1',
             'KeepAlive'   =>  $self->{'_keep_alive'},
+            'Timeout'    =>  $self->{'_timeout'},
 
         ) or die "Can't connect: $@";
 
@@ -340,6 +342,7 @@ This module is a big rough on the edges, but I decided to release it on CPAN so 
         port     => 8123,
         user     => 'Frodo'
         password => 'finger',
+        timeout  => 5,
     );
 
     my $rows = $ch->select("SELECT id, field_one, field_two FROM some_table");
