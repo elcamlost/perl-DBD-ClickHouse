@@ -1,48 +1,44 @@
 {
    "abstract" : "Database driver for Clickhouse OLAP Database",
    "author" : [
-      "Ilya Rassadin <elcamlost@gmail.com>"
+      "Ilya Rassadin, C<< <elcamlost at gmail.com> >>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Module::Build version 0.4214",
+   "generated_by" : "App::ModuleBuildTiny version 0.022, CPAN::Meta::Converter version 2.150010",
    "license" : [
-      "artistic_1"
+      "artistic_2"
    ],
    "meta-spec" : {
       "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
-      "version" : "2"
+      "version" : 2
    },
    "name" : "ClickHouse",
    "prereqs" : {
-      "build" : {
-         "requires" : {
-            "Test::More" : "0"
-         }
-      },
       "configure" : {
          "requires" : {
-            "Module::Build" : "0"
+            "Module::Build::Tiny" : "0.034"
+         }
+      },
+      "develop" : {
+         "requires" : {
+            "App::ModuleBuildTiny" : "0.022"
          }
       },
       "runtime" : {
          "requires" : {
-            "Net::HTTP" : 6.09,
-            "Try::Tiny" : 0.24,
-            "URI" : 1.71
+            "Net::HTTP" : "6.09",
+            "Test::More" : "1.3",
+            "Try::Tiny" : "0.24"
          }
       }
    },
    "provides" : {
       "ClickHouse" : {
          "file" : "lib/ClickHouse.pm",
-         "version" : "0.02"
+         "version" : "0.04"
       }
    },
-   "release_status" : "unstable",
-   "resources" : {
-      "repository" : {
-         "url" : "https://github.com/elcamlost/perl-DBD-ClickHouse"
-      }
-   },
-   "version" : "0.02"
+   "release_status" : "stable",
+   "version" : "0.04",
+   "x_serialization_backend" : "JSON::PP version 4.02"
 }
