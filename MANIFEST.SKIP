@@ -65,6 +65,9 @@
 ^MYMETA\.
 #!end included /Users/camlost/.plenv/versions/5.26.0/lib/perl5/5.26.0/ExtUtils/MANIFEST.SKIP
 
+# Avoid docker file used for development
+docker-compose.yml
+
 .idea
 local
 
