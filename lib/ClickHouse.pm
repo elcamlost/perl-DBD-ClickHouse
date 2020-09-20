@@ -183,6 +183,41 @@ sub select_value {
     return $arrayref->[0]->[0];
 }
 
+sub selectall_arrayref {
+    my ($self, $query, $attr) = @_;
+
+    if (ref $attr && ref $attr->{Columns} eq 'HASH') {
+        return $self->_selectall_arrayref_hashref($query, $attr);
+    }
+
+    return $self->select($query);
+}
+
+sub _selectall_arrayref_hashref {
+    my ($self, $query, $attr) = @_;
+
+    my $arrayref = $self->select("$query FORMAT TabSeparatedWithNames");
+    return           unless defined $arrayref && ref $arrayref eq 'ARRAY';
+    return $arrayref unless scalar @{$arrayref};
+
+    my $columns = shift @{$arrayref};
+    foreach my $row (@{$arrayref}) {
+        my %row;
+        @row{ @{$columns} } = @{$row};
+        $row = \%row;
+    }
+
+    return $arrayref;
+}
+
+sub selectcol_arrayref {
+    my ($self, $query) = @_;
+    my $arrayref = $self->select($query);
+
+    return unless defined $arrayref && ref $arrayref eq 'ARRAY';
+    return [ map { $_->[0] } @{$arrayref} ];
+}
+
 sub do {
     my ($self, $query, @rows) = @_;
     return $self->_query(sub {
