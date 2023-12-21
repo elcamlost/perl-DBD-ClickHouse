@@ -1,7 +1,6 @@
 Revision history for ClickHouse
 
 0.05    2023-12-08
-        Adds a stacktrace on die
         * FIX: Fixes bug with Net::HTTP+URI request constructor
 
 0.04    2020-08-04
