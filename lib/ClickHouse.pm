@@ -92,7 +92,7 @@ sub new {
             'KeepAlive'   => $self->{'_keep_alive'},
             'Timeout'     => $self->{'_timeout'},
 
-        ) or confess "Can't connect: $@";
+        ) or die "Can't connect: $@";
 
         # create URI object
         my $uri = URI->new(sprintf ("/?database=%s", $self->{'_database'}));
@@ -226,7 +226,7 @@ sub _parse_response {
     else {
         my $add_mess = _formaty_query_result( $self->_read_body() );
         if (defined $add_mess) { $add_mess = $add_mess->[0]->[0] // '' };
-        confess "ClickHouse error: $mess ($add_mess)\n\t$query";
+        die "ClickHouse error: $mess ($add_mess)\n\t$query";
     }
 }
 
@@ -238,7 +238,7 @@ sub _read_body {
     while (1) {
         my $buf;
         my $n = $self->_get_socket()->read_entity_body($buf, 1024);
-        confess "can't read response: $!" unless defined $n;
+        die "can't read response: $!" unless defined $n;
         last unless $n;
         $buf = $chunk . $buf;
         push @response, split (/\n/, $buf);
